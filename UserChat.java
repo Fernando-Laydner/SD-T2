@@ -21,14 +21,55 @@ public class UserChat extends UnicastRemoteObject implements IUserChat {
     JTextField textField = new JTextField(50);
     JEditorPane messageArea = new JEditorPane();
     StringBuilder messageContent = new StringBuilder();
+    public JButton bEnviar = new JButton("Enviar");
+    public JButton bSair = new JButton("Sair da sala");
 
     public UserChat() throws RemoteException {
         textField.setEditable(false);
         messageArea.setContentType("text/html");
         messageArea.setEditable(false);
         messageArea.setText("<html><body></body></html>");
-        frame.getContentPane().add(textField, BorderLayout.SOUTH);
-        frame.getContentPane().add(new JScrollPane(messageArea), BorderLayout.CENTER);
+
+        frame.setLayout(new GridBagLayout());
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(5, 5, 5, 5);
+
+        // Configurar messageArea
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        gbc.gridwidth = 3;
+        gbc.fill = GridBagConstraints.BOTH;
+        gbc.weightx = 1.0;
+        gbc.weighty = 1.0;
+        frame.getContentPane().add(new JScrollPane(messageArea), gbc);
+
+        // Configurar textField
+        gbc.gridx = 0;
+        gbc.gridy = 1;
+        gbc.gridwidth = 2;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.weightx = 0.9;
+        gbc.weighty = 0.0;
+        frame.getContentPane().add(textField, gbc);
+
+        // Configurar bEnviar
+        gbc.gridx = 2;
+        gbc.gridy = 1;
+        gbc.gridwidth = 1;
+        gbc.fill = GridBagConstraints.NONE;
+        gbc.weightx = 0.1;
+        gbc.weighty = 0.0;
+        frame.getContentPane().add(bEnviar, gbc);
+
+        // Configurar bSair
+        gbc.gridx = 2;
+        gbc.gridy = 2;
+        gbc.gridwidth = 1;
+        gbc.fill = GridBagConstraints.NONE;
+        gbc.weightx = 0.05;
+        gbc.weighty = 0.0;
+        frame.getContentPane().add(bSair, gbc);
+
         frame.pack();
         frame.setSize(600, 400);
 
@@ -40,6 +81,43 @@ public class UserChat extends UnicastRemoteObject implements IUserChat {
                 }
             }
         });
+
+        // Add action listener to textField
+        textField.addActionListener(e -> {
+            String msg = textField.getText();
+            if (!msg.isEmpty()) {
+                if (msg.startsWith("/join ")) {
+                    String sala = msg.substring(6).trim();
+                    joinOrCreateRoom(sala);
+                } else if (msg.equals("/leave")) {
+                    clientLeaveRoom();
+                } else if (msg.equals("/close")) {
+                    exit(0);
+                } else if (msg.equals("/help")) {
+                    appendToMessageArea("Comandos disponiveis:<br>" +
+                            "  /join [nome da sala]    (Entra na sala especificada)<br>" +
+                            "  /leave                  (Sai da sala)<br>" +
+                            "  /close                  (Fecha a janela do chat)<br>");
+                } else if (msg.startsWith("/")) {
+                    appendToMessageArea("Comando nao reconhecido! Digite /help para obter a lista de comandos<br>");
+                } else {
+                    sendMessage(msg);
+                }
+                textField.setText("");
+            }
+        });
+
+        // Add action listener to bEnviar
+        bEnviar.addActionListener(e -> {
+            String msg = textField.getText();
+            if (!msg.isEmpty()) {
+                sendMessage(msg);
+                textField.setText("");
+            }
+        });
+
+        // Add action listener to bSair
+        bSair.addActionListener(e -> clientLeaveRoom());
     }
 
     public void deliverMsg(String senderName, String msg) throws RemoteException {
@@ -61,7 +139,7 @@ public class UserChat extends UnicastRemoteObject implements IUserChat {
         try {
             listaSalas = serverStub.getRooms();
             Iterator<String> sala = listaSalas.iterator();
-            appendToMessageArea("Selecione a sala desejada ou digite o nome da sala para cria-la:<br>");
+            appendToMessageArea("Selecione a sala desejada ou digite /join [nome da sala] para cria uma nova:<br>");
             while (sala.hasNext()) {
                 String room = sala.next();
                 appendToMessageArea("    -> <a href='" + room + "'>" + room + "</a><br>");
@@ -90,8 +168,7 @@ public class UserChat extends UnicastRemoteObject implements IUserChat {
                     if (!serverStub.getRooms().contains(roomName)) {
                         serverStub.createRoom(roomName);
                     }
-                    messageContent.setLength(0); // Clear the current content
-                    messageArea.setText("<html><body></body></html>"); // Reset the message area
+                    messageContent.setLength(0);
                     roomStub = (IRoomChat) Naming.lookup("//" + this.serverIP + ":2020/" + roomName);
                     roomStub.joinRoom(this.clientName, this);
                 }
@@ -111,14 +188,14 @@ public class UserChat extends UnicastRemoteObject implements IUserChat {
             try {
                 this.roomStub.leaveRoom(this.clientName);
                 this.inRoom = false;
-                messageContent.setLength(0); // Clear the current content
-                messageArea.setText("<html><body></body></html>"); // Reset the message area
+                messageContent.setLength(0);
                 this.promptSalas();
             } catch (RemoteException e1) {
                 e1.printStackTrace();
             }
         } else {
-            messageArea.setText("[SERVIDOR] Tem que estar em uma sala pra conseguir usar esse commando.<br>");
+            messageContent.setLength(0);
+            appendToMessageArea("[SERVIDOR] Tem que estar em uma sala pra conseguir usar esse commando.<br>");
             this.promptSalas();
         }
     }
@@ -128,7 +205,9 @@ public class UserChat extends UnicastRemoteObject implements IUserChat {
             if (this.inRoom) {
                 this.roomStub.sendMsg(this.clientName, msg);
             } else {
-                this.appendToMessageArea("É preciso entrar em alguma sala para mandar mensagens!<br>");
+                messageContent.setLength(0);
+                this.appendToMessageArea("[SERVIDOR] Necessario entrar em alguma sala para mandar mensagens!<br>");
+                this.promptSalas();
             }
         } catch (RemoteException ex) {
             this.appendToMessageArea("[Falha no envio] da mensagem: " + msg + "<br>");
@@ -148,29 +227,5 @@ public class UserChat extends UnicastRemoteObject implements IUserChat {
         client.clientName = client.getName();
         client.serverIP = args[0];
         client.connectToServer();
-
-        client.textField.addActionListener(e -> {
-            String msg = client.textField.getText();
-            if (!msg.isEmpty()) {
-                if (msg.startsWith("/join ")) {
-                    String sala = msg.substring(6).trim();
-                    client.joinOrCreateRoom(sala);
-                } else if (msg.equals("/leave")) {
-                    client.clientLeaveRoom();
-                } else if (msg.equals("/close")) {
-                    exit(0);
-                } else if (msg.equals("/help")) {
-                    client.appendToMessageArea("Comandos disponiveis:<br>" +
-                            "\t/join [nome da sala]\t(Entra na sala especificada)<br>" +
-                            "\t/leave\t\t(Sai da sala)<br>" +
-                            "\t/close\t\t(Fecha a janela do chat)<br>");
-                } else if (msg.startsWith("/")) {
-                    client.appendToMessageArea("Comando não reconhecido! Digite /help para obter a lista de comandos<br>");
-                } else {
-                    client.sendMessage(msg);
-                }
-                client.textField.setText("");
-            }
-        });
     }
 }
