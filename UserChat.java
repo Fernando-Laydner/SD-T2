@@ -17,7 +17,7 @@ public class UserChat extends UnicastRemoteObject implements IUserChat {
     private boolean inRoom = false;
     public String serverIP;
 
-    JFrame frame = new JFrame("Chatter");
+    JFrame frame = new JFrame("Chat com RMI");
     JTextField textField = new JTextField(50);
     JEditorPane messageArea = new JEditorPane();
     StringBuilder messageContent = new StringBuilder();
@@ -47,27 +47,33 @@ public class UserChat extends UnicastRemoteObject implements IUserChat {
         gbc.gridx = 0;
         gbc.gridy = 1;
         gbc.gridwidth = 2;
-        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.gridheight = 2; // Alterado para 2 para ocupar duas linhas
+        gbc.fill = GridBagConstraints.BOTH; // Alterado para BOTH para ocupar verticalmente também
         gbc.weightx = 0.9;
-        gbc.weighty = 0.0;
+        gbc.weighty = 0.01; // Alterado para 0.9 para ocupar mais espaço vertical
+
         frame.getContentPane().add(textField, gbc);
 
         // Configurar bEnviar
         gbc.gridx = 2;
         gbc.gridy = 1;
         gbc.gridwidth = 1;
-        gbc.fill = GridBagConstraints.NONE;
+        gbc.gridheight = 1; // Alterado para 1 para ocupar apenas uma linha
+        gbc.fill = GridBagConstraints.HORIZONTAL; // Alterado para HORIZONTAL para ocupar apenas horizontalmente
         gbc.weightx = 0.1;
         gbc.weighty = 0.0;
+
         frame.getContentPane().add(bEnviar, gbc);
 
         // Configurar bSair
         gbc.gridx = 2;
-        gbc.gridy = 2;
+        gbc.gridy = 2; // Alterado para 2 para posicionar abaixo do botão de enviar
         gbc.gridwidth = 1;
-        gbc.fill = GridBagConstraints.NONE;
-        gbc.weightx = 0.05;
+        gbc.gridheight = 1; // Mantido como 1 para ocupar apenas uma linha
+        gbc.fill = GridBagConstraints.HORIZONTAL; // Mantido como HORIZONTAL
+        gbc.weightx = 0.1;
         gbc.weighty = 0.0;
+
         frame.getContentPane().add(bSair, gbc);
 
         frame.pack();
@@ -171,13 +177,13 @@ public class UserChat extends UnicastRemoteObject implements IUserChat {
                     messageContent.setLength(0);
                     roomStub = (IRoomChat) Naming.lookup("//" + this.serverIP + ":2020/" + roomName);
                     roomStub.joinRoom(this.clientName, this);
-                    this.inRoom = true;
                 }
             } catch (RemoteException e) {
                 promptSalas();
             } catch (Exception e) {
                 e.printStackTrace();
             }
+            this.inRoom = true;
         } else {
             this.appendToMessageArea("[SERVIDOR] Tem que sair da sala pra conseguir entrar em uma nova.<br>");
         }
