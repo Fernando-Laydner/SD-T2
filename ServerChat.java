@@ -1,14 +1,47 @@
 import java.rmi.RemoteException;
+import static java.lang.System.exit;
+import java.net.MalformedURLException;
 import java.rmi.Naming;
 import java.rmi.registry.LocateRegistry;
+import java.rmi.server.UnicastRemoteObject;
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Scanner;
  
-public class ServerChat extends ObjetoServer {
+public class ServerChat extends UnicastRemoteObject implements IServerChat {
+    ArrayList<String> salas;
+    ArrayList<RoomChat> rooms; 
+
     public ServerChat() throws RemoteException {
-        super();
+        salas = new ArrayList<String>();
+        rooms = new ArrayList<>();
+
         createRoom("abacate");
         createRoom("sala");
+    }
+
+    public ArrayList<String> getRooms() throws RemoteException {
+        return salas;
+    }
+
+    public void createRoom(String roomName) throws RemoteException {
+        if (!salas.contains(roomName) && !roomName.equals("Servidor")){
+            salas.add(roomName);
+            RoomChat room = new RoomChat();
+            room.nome_sala = roomName;
+            try {
+                Naming.rebind("//localhost:2020/" + roomName, room);
+                rooms.add(room);
+            } catch (RemoteException e) {
+                e.printStackTrace();
+            } catch (MalformedURLException e) {
+                e.printStackTrace();
+            }
+            System.out.println("Sala " + roomName + " iniciada com sucesso!");
+        }
+        else{
+            System.out.println("Sala " + roomName + " ja existe e nao foi criada.");
+        }
     }
 
     public static void main(String[] args) {
@@ -19,7 +52,6 @@ public class ServerChat extends ObjetoServer {
             ServerChat server = new ServerChat();
             Naming.rebind("//localhost:2020/Servidor", server);
 
-            @SuppressWarnings("resource")
 			Scanner scanner = new Scanner(System.in);
             while (true) {
 			    String command = scanner.nextLine().trim();
@@ -60,14 +92,19 @@ public class ServerChat extends ObjetoServer {
                         System.out.println("\t-" + room.next());
                     }
                 } 
+                else if (command.equals("/exit")){
+                    scanner.close();
+                    exit(0);
+                }
                 else if(command.equals("/help")){
                     System.out.println("Comandos disponiveis:\n" +
                                         "\t/create [nome da sala]\t\t(Abre a sala especificada)\n" + 
                                         "\t/close [nome da sala]\t\t(Fecha a sala especificada)\n" + 
-                                        "\t/lista\t\t\t\t(Lista o nome das salas)");
+                                        "\t/lista\t\t\t\t(Lista o nome das salas)\n" + 
+                                        "\t/exit\t\t\t\t(Fecha o servidor)\n");
                 }
                 else {
-			        System.out.println("Commando nao reconhecido! Digite '/help' para lista de comandos");
+			        System.out.println("Commando nao reconhecido ou incorreto! Digite '/help' para lista de comandos");
 			    }
             }
         }

@@ -1,20 +1,33 @@
 import javax.swing.*;
-
+import java.awt.*;
 import static java.lang.System.exit;
-
 import java.rmi.Naming;
 import java.rmi.RemoteException;
+import java.rmi.server.UnicastRemoteObject;
 import java.util.ArrayList;
 import java.util.Iterator;
 
-public class UserChat extends ObjetoUser {
+public class UserChat extends UnicastRemoteObject implements IUserChat {
     private IServerChat serverStub;
     private IRoomChat roomStub;
     private String clientName;
     private boolean inRoom = false;
+    public String serverIP;
+
+	JFrame frame = new JFrame("Chatter");
+    JTextField textField = new JTextField(50);
+    public JTextArea messageArea = new JTextArea(16, 50);
 
     public UserChat() throws RemoteException {
-        super();
+        textField.setEditable(false);
+        messageArea.setEditable(false);
+        frame.getContentPane().add(textField, BorderLayout.SOUTH);
+        frame.getContentPane().add(new JScrollPane(messageArea), BorderLayout.CENTER);
+        frame.pack();
+    }
+
+    public void deliverMsg(String senderName, String msg) throws RemoteException {
+        messageArea.append(senderName + ": " + msg + "\n");
     }
 
     private String getName() {
@@ -42,38 +55,63 @@ public class UserChat extends ObjetoUser {
 
             promptSalas();
 
-            super.textField.setEditable(true);
+            this.textField.setEditable(true);
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
-    public void joinOrCreateRoom(String roomName, UserChat client){
-        try{
-            if (!roomName.isEmpty()) {
-                if (!serverStub.getRooms().contains(roomName)) {
-                    serverStub.createRoom(roomName);
+    public void joinOrCreateRoom(String roomName){
+        if (!this.inRoom){
+            try{
+                if (!roomName.isEmpty()) {
+                    if (!serverStub.getRooms().contains(roomName)) {
+                        serverStub.createRoom(roomName);
+                    }
+                    messageArea.setText("");
+                    roomStub = (IRoomChat) Naming.lookup("//" + this.serverIP + ":2020/" + roomName);
+                    roomStub.joinRoom(this.clientName, this);
                 }
-                messageArea.setText("");
-				roomStub = (IRoomChat) Naming.lookup("//" + this.serverIP + ":2020/" + roomName);
-                roomStub.joinRoom(clientName, client);
             }
+            catch (RemoteException e) {
+                promptSalas();
+            }
+            catch (Exception e) {
+                e.printStackTrace();
+            }
+            this.inRoom = true;
         }
-        catch (RemoteException e) {
-            promptSalas();
-        }
-        catch (Exception e) {
-            e.printStackTrace();
+        else {                    
+            this.messageArea.append("[SERVIDOR] Tem que sair da sala pra conseguir entrar em uma nova.\n");
         }
     } 
 
     public void clientLeaveRoom(){
-        try {
-            this.roomStub.leaveRoom(this.clientName);
-            this.inRoom = false;
-            this.messageArea.setText("");
+        if (this.inRoom){
+            try {
+                this.roomStub.leaveRoom(this.clientName);
+                this.inRoom = false;
+                this.messageArea.setText("");
+                this.promptSalas();
+            } catch (RemoteException e1) {}
+        }
+        else{
+            this.messageArea.setText("[SERVIDOR] Tem que estar em uma sala pra conseguir usar esse commando.\n");
             this.promptSalas();
-        } catch (RemoteException e1) {}
+        }
+    }
+
+    public void sendMessage(String msg){
+        try {
+            if (this.inRoom){
+                this.roomStub.sendMsg(this.clientName, msg);
+            }
+            else{
+                this.messageArea.append("E preciso entrar em alguma sala para mandar mensagens!\n");
+            }
+        } catch (RemoteException ex) {
+            this.messageArea.append("[Falha no envio] da mensagem:" + msg + "\n");
+        }
     }
 
     public static void main(String[] args) throws RemoteException {
@@ -95,44 +133,25 @@ public class UserChat extends ObjetoUser {
             if (!msg.isEmpty()) {
                 if (msg.startsWith("/join ")) {
                     String sala = msg.substring(5).trim();
-                    if (!client.inRoom){
-                        client.joinOrCreateRoom(sala, client);
-                        client.inRoom = true;
-                    }
-                    else {                    
-                        client.messageArea.append("[SERVIDOR] Tem que sair da sala pra conseguir entrar em uma nova.\n");
-                    }
+                    client.joinOrCreateRoom(sala);
                 }
                 else if (msg.equals("/leave")){
-                    if (client.inRoom){
-                        client.clientLeaveRoom();
-                    }
-                    else{
-                        client.messageArea.setText("[SERVIDOR] Tem que estar em uma sala pra conseguir usar esse commando.\n");
-                        client.promptSalas();
-                    }
+                    client.clientLeaveRoom();
                 }
                 else if (msg.equals("/close")){
                     exit(0);
                 }
                 else if (msg.equals("/help")){
                     client.messageArea.append("Comandos disponiveis:\n" +
-                                        "\t/join [nome da sala]\t\t(Entra na sala especificada)\n" + 
-                                        "\t/leave\t\t\t\t(Sai da sala)\n" + 
-                                        "\t/close\t\t\t\t(Fecha a janela do chat)\n");
+                                        "\t/join [nome da sala]\t(Entra na sala especificada)\n" + 
+                                        "\t/leave\t\t(Sai da sala)\n" + 
+                                        "\t/close\t\t(Fecha a janela do chat)\n");
                 }
                 else if (msg.startsWith("/")){
                     client.messageArea.append("Comando nao reconhecido! Digite /help para obter a lista de comandos\n");
                 }
                 else {
-                    try {
-                        if (client.inRoom){
-                            client.roomStub.sendMsg(client.clientName, msg);
-                        }
-                        else{
-                            client.messageArea.append("E preciso entrar em alguma sala para mandar mensagens!\n");
-                        }
-                    } catch (RemoteException ex) {}
+                    client.sendMessage(msg);
                 }
                 client.textField.setText("");
             }
