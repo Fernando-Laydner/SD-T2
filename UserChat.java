@@ -171,13 +171,13 @@ public class UserChat extends UnicastRemoteObject implements IUserChat {
                     messageContent.setLength(0);
                     roomStub = (IRoomChat) Naming.lookup("//" + this.serverIP + ":2020/" + roomName);
                     roomStub.joinRoom(this.clientName, this);
+                    this.inRoom = true;
                 }
             } catch (RemoteException e) {
                 promptSalas();
             } catch (Exception e) {
                 e.printStackTrace();
             }
-            this.inRoom = true;
         } else {
             this.appendToMessageArea("[SERVIDOR] Tem que sair da sala pra conseguir entrar em uma nova.<br>");
         }
