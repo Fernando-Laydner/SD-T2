@@ -104,7 +104,7 @@ public class ServerChat extends UnicastRemoteObject implements IServerChat {
                                         "\t/exit\t\t\t\t(Fecha o servidor)\n");
                 }
                 else {
-			        System.out.println("Commando nao reconhecido ou incorreto! Digite '/help' para lista de comandos");
+			        System.out.println("Comando nao reconhecido ou incorreto! Digite '/help' para lista de comandos");
 			    }
             }
         }
