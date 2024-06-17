@@ -1,5 +1,7 @@
 import java.rmi.RemoteException;
 import static java.lang.System.exit;
+
+import java.net.InetAddress;
 import java.net.MalformedURLException;
 import java.rmi.Naming;
 import java.rmi.registry.LocateRegistry;
@@ -51,7 +53,10 @@ public class ServerChat extends UnicastRemoteObject implements IServerChat {
 
             ServerChat server = new ServerChat();
             Naming.rebind("//localhost:2020/Servidor", server);
-
+            
+            String ipAddress = InetAddress.getLocalHost().getHostAddress();
+            System.out.println("Endereco IP: " + ipAddress);
+            
 			Scanner scanner = new Scanner(System.in);
             while (true) {
 			    String command = scanner.nextLine().trim();
