@@ -8,8 +8,9 @@ import javax.swing.event.HyperlinkListener;
 
 import java.awt.*;
 import static java.lang.System.exit;
-import java.rmi.Naming;
 import java.rmi.RemoteException;
+import java.rmi.registry.LocateRegistry;
+import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -167,7 +168,8 @@ public class UserChat extends UnicastRemoteObject implements IUserChat {
 
     public void connectToServer() throws RemoteException {
         try {
-            serverStub = (IServerChat) Naming.lookup("//" + this.serverIP + ":2020/Servidor");
+            Registry registry = LocateRegistry.getRegistry(this.serverIP, 2020);
+            serverStub = (IServerChat) registry.lookup("Servidor");
 
             promptSalas();
 
@@ -185,14 +187,15 @@ public class UserChat extends UnicastRemoteObject implements IUserChat {
                         serverStub.createRoom(roomName);
                     }
                     messageContent.setLength(0);
-                    this.roomStub = (IRoomChat) Naming.lookup("//" + this.serverIP + ":2020/" + roomName);
+                    Registry registry = LocateRegistry.getRegistry(this.serverIP, 2020);
+                    this.roomStub = (IRoomChat) registry.lookup(roomName);
                     this.roomStub.joinRoom(clientName, (IUserChat) this);
                     bSair.setText("Sair da sala");
                     this.inRoom = true;
                 }
             } catch (RemoteException e) {
                 e.printStackTrace();
-                appendToMessageArea("[SERVIDOR] Erro ao entrar na sala");
+                appendToMessageArea("[SERVIDOR] Erro ao entrar na sala</br>");
                 promptSalas();
             } catch (Exception e) {
                 e.printStackTrace();

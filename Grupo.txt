@@ -1,0 +1,4 @@
+// Trabalho 2 de Sistemas Distribuídos
+// Chat com RMI
+// Fernando Kalikosque Laydner Júnior
+// Miguel Jorge Silva das Virgens

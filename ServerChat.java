@@ -6,9 +6,11 @@ import java.rmi.RemoteException;
 import static java.lang.System.exit;
 
 import java.net.InetAddress;
-import java.net.MalformedURLException;
+import java.rmi.AccessException;
+import java.rmi.AlreadyBoundException;
 import java.rmi.Naming;
 import java.rmi.registry.LocateRegistry;
+import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -24,20 +26,28 @@ public class ServerChat extends UnicastRemoteObject implements IServerChat {
     }
 
     public ArrayList<String> getRooms() throws RemoteException {
-        return salas;
+        return this.salas;
     }
 
     public void createRoom(String roomName) throws RemoteException {
         if (!salas.contains(roomName) && !roomName.equals("Servidor")){
             salas.add(roomName);
+            
             RoomChat room = new RoomChat();
-            room.nome_sala = roomName;
+            Registry registry = LocateRegistry.getRegistry(2020);
+
             try {
-                Naming.rebind("//localhost:2020/" + roomName, room);
-                rooms.add(room);
-            } catch (MalformedURLException e) {
+                registry.bind(roomName, room);
+            } catch (AccessException e) {
+                e.printStackTrace();
+            } catch (RemoteException e) {
+                e.printStackTrace();
+            } catch (AlreadyBoundException e) {
                 e.printStackTrace();
             }
+            room.nome_sala = roomName;
+            rooms.add(room);
+
             System.out.println("Sala " + roomName + " iniciada com sucesso!");
         }
         else{
@@ -51,7 +61,7 @@ public class ServerChat extends UnicastRemoteObject implements IServerChat {
             LocateRegistry.createRegistry(2020);
 
             ServerChat server = new ServerChat();
-            Naming.rebind("//localhost:2020/Servidor", server);
+            Naming.rebind("//127.0.0.1:2020/Servidor", server);
             
             String ipAddress = InetAddress.getLocalHost().getHostAddress();
             System.out.println("Endereco IP: " + ipAddress);
