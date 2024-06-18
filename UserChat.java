@@ -1,3 +1,7 @@
+// Trabalho 2 de Sistemas Distribuidos
+// Chat com RMI
+// Fernando Kalikosque Laydner Júnior
+// Miguel Jorge Silva das Virgens
 import javax.swing.*;
 import javax.swing.event.HyperlinkEvent;
 import javax.swing.event.HyperlinkListener;
