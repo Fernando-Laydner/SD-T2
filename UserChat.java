@@ -187,15 +187,17 @@ public class UserChat extends UnicastRemoteObject implements IUserChat {
                         serverStub.createRoom(roomName);
                     }
                     messageContent.setLength(0);
+                    System.out.println(serverIP);
                     Registry registry = LocateRegistry.getRegistry(serverIP, 2020);
-                    this.roomStub = (IRoomChat) registry.lookup(roomName);
-                    this.roomStub.joinRoom(clientName, (IUserChat) this);
+                    roomStub = (IRoomChat) registry.lookup(roomName);
+                    System.out.println(roomStub);
+                    roomStub.joinRoom(clientName, this);
                     bSair.setText("Sair da sala");
-                    this.inRoom = true;
+                    inRoom = true;
                 }
             } catch (RemoteException e) {
                 e.printStackTrace();
-                appendToMessageArea("[SERVIDOR] Erro ao entrar na sala</br>");
+                appendToMessageArea("[SERVIDOR] Erro ao entrar na sala<br>");
                 promptSalas();
             } catch (Exception e) {
                 e.printStackTrace();
