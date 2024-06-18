@@ -4,8 +4,6 @@
 // Miguel Jorge Silva das Virgens
 import java.rmi.RemoteException;
 import static java.lang.System.exit;
-
-import java.net.InetAddress;
 import java.rmi.AccessException;
 import java.rmi.AlreadyBoundException;
 import java.rmi.Naming;
@@ -35,7 +33,6 @@ public class ServerChat extends UnicastRemoteObject implements IServerChat {
             
             RoomChat room = new RoomChat();
             Registry registry = LocateRegistry.getRegistry(2020);
-
             try {
                 registry.bind(roomName, room);
             } catch (AccessException e) {
@@ -58,13 +55,9 @@ public class ServerChat extends UnicastRemoteObject implements IServerChat {
     public static void main(String[] args) {
         try {
             // Cria e exporta o registro RMI na porta 2020
-            LocateRegistry.createRegistry(2020);
-
             ServerChat server = new ServerChat();
-            Naming.rebind("//127.0.0.1:2020/Servidor", server);
-            
-            String ipAddress = InetAddress.getLocalHost().getHostAddress();
-            System.out.println("Endereco IP: " + ipAddress);
+            Registry registry = LocateRegistry.createRegistry(2020);
+            registry.bind("Servidor", server);
 
             server.createRoom("abacate");
             server.createRoom("sala");
@@ -87,7 +80,7 @@ public class ServerChat extends UnicastRemoteObject implements IServerChat {
                             RoomChat sala = room.next();
                             if (sala.nome_sala.equals(roomName)){
                                 sala.closeRoom();
-                                Naming.unbind("//localhost:2020/" + roomName);
+                                Naming.unbind(roomName);
                                 server.rooms.remove(sala);
                                 server.salas.remove(roomName);
                                 removed = true;

@@ -168,7 +168,7 @@ public class UserChat extends UnicastRemoteObject implements IUserChat {
 
     public void connectToServer() throws RemoteException {
         try {
-            Registry registry = LocateRegistry.getRegistry(this.serverIP, 2020);
+            Registry registry = LocateRegistry.getRegistry(serverIP, 2020);
             serverStub = (IServerChat) registry.lookup("Servidor");
 
             promptSalas();
@@ -187,7 +187,7 @@ public class UserChat extends UnicastRemoteObject implements IUserChat {
                         serverStub.createRoom(roomName);
                     }
                     messageContent.setLength(0);
-                    Registry registry = LocateRegistry.getRegistry(this.serverIP, 2020);
+                    Registry registry = LocateRegistry.getRegistry(serverIP, 2020);
                     this.roomStub = (IRoomChat) registry.lookup(roomName);
                     this.roomStub.joinRoom(clientName, (IUserChat) this);
                     bSair.setText("Sair da sala");
