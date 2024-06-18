@@ -15,11 +15,8 @@ public class ServerChat extends UnicastRemoteObject implements IServerChat {
     ArrayList<RoomChat> rooms; 
 
     public ServerChat() throws RemoteException {
-        salas = new ArrayList<String>();
+        salas = new ArrayList<>();
         rooms = new ArrayList<>();
-
-        createRoom("abacate");
-        createRoom("sala");
     }
 
     public ArrayList<String> getRooms() throws RemoteException {
@@ -34,8 +31,6 @@ public class ServerChat extends UnicastRemoteObject implements IServerChat {
             try {
                 Naming.rebind("//localhost:2020/" + roomName, room);
                 rooms.add(room);
-            } catch (RemoteException e) {
-                e.printStackTrace();
             } catch (MalformedURLException e) {
                 e.printStackTrace();
             }
@@ -56,6 +51,9 @@ public class ServerChat extends UnicastRemoteObject implements IServerChat {
             
             String ipAddress = InetAddress.getLocalHost().getHostAddress();
             System.out.println("Endereco IP: " + ipAddress);
+
+            server.createRoom("abacate");
+            server.createRoom("sala");
             
 			Scanner scanner = new Scanner(System.in);
             while (true) {

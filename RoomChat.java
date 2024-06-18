@@ -12,13 +12,9 @@ public class RoomChat extends UnicastRemoteObject implements IRoomChat {
     }
  
     public void sendMsg(String usrName, String msg) throws RemoteException {
-        userList.forEach((nome, user) -> {
-            try {
-                user.deliverMsg(usrName, msg);
-            } catch (RemoteException e) {
-                throw new RuntimeException(e);
-            }
-        });
+        for (String user : this.userList.keySet()) {
+            this.userList.get(user).deliverMsg(usrName, msg);
+        }
     }
 
     public void joinRoom(String usrName, IUserChat user) throws RemoteException {
@@ -26,25 +22,25 @@ public class RoomChat extends UnicastRemoteObject implements IRoomChat {
             user.deliverMsg("[SERVIDOR]", "Nao e permitido dois usuarios com o mesmo nome: " + usrName);
             throw new RemoteException("Usuario com nome igual ao de outro usuario na sala.");
         }
-        userList.put(usrName, user);
-        sendMsg("[SALA]", "Bem vindo " + usrName + " a sala: " + this.nome_sala);
+        this.userList.put(usrName, user);
+        sendMsg("[SALA]", "Bem vindo " + usrName + " a sala: " + this.nome_sala);;
     }
 
     public void leaveRoom(String usrName) throws RemoteException {
-        userList.remove(usrName);
+        this.userList.remove(usrName);
     }
 
     public void closeRoom() throws RemoteException {
         sendMsg("[SALA]", "Sala fechada pelo servidor");
-        userList.clear();
+        this.userList.clear();
     }
 
     public String getRoomName() throws RemoteException {
-        return nome_sala;
+        return this.nome_sala;
     }
 
     public boolean checkUserInRoom(String usrName) throws RemoteException {
-        for (String nome : userList.keySet()){
+        for (String nome : this.userList.keySet()){
             if (nome.equals(usrName)){
                 return true;
             }
