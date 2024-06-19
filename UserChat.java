@@ -21,6 +21,7 @@ public class UserChat extends UnicastRemoteObject implements IUserChat {
     private String clientName;
     private boolean inRoom = false;
     public String serverIP;
+    Registry registry;
 
     JFrame frame = new JFrame("Chat com RMI");
     JTextField textField = new JTextField(50);
@@ -168,7 +169,7 @@ public class UserChat extends UnicastRemoteObject implements IUserChat {
 
     public void connectToServer() throws RemoteException {
         try {
-            Registry registry = LocateRegistry.getRegistry(serverIP, 2020);
+            registry = LocateRegistry.getRegistry(serverIP, 2020);
             serverStub = (IServerChat) registry.lookup("Servidor");
 
             promptSalas();
@@ -187,11 +188,10 @@ public class UserChat extends UnicastRemoteObject implements IUserChat {
                         serverStub.createRoom(roomName);
                     }
                     messageContent.setLength(0);
-                    System.out.println(serverIP);
-                    Registry registry = LocateRegistry.getRegistry(serverIP, 2020);
+
                     roomStub = (IRoomChat) registry.lookup(roomName);
-                    System.out.println(roomStub);
                     roomStub.joinRoom(clientName, this);
+                    
                     bSair.setText("Sair da sala");
                     inRoom = true;
                 }
