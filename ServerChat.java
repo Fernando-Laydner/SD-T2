@@ -56,8 +56,9 @@ public class ServerChat extends UnicastRemoteObject implements IServerChat {
     public static void main(String[] args) {
         try {
             // Cria e exporta o registro RMI na porta 2020
+            Registry reg = LocateRegistry.createRegistry(2020);
             ServerChat server = new ServerChat();
-            server.registry = LocateRegistry.createRegistry(2020);
+            server.registry = reg;
             server.registry.bind("Servidor", server);
 
             server.createRoom("abacate");

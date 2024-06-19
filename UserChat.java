@@ -191,7 +191,7 @@ public class UserChat extends UnicastRemoteObject implements IUserChat {
 
                     roomStub = (IRoomChat) registry.lookup(roomName);
                     roomStub.joinRoom(clientName, this);
-                    
+
                     bSair.setText("Sair da sala");
                     inRoom = true;
                 }
