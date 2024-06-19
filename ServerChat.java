@@ -16,7 +16,8 @@ import java.util.Scanner;
  
 public class ServerChat extends UnicastRemoteObject implements IServerChat {
     ArrayList<String> salas;
-    ArrayList<RoomChat> rooms; 
+    ArrayList<RoomChat> rooms;
+    Registry registry;
 
     public ServerChat() throws RemoteException {
         salas = new ArrayList<>();
@@ -32,9 +33,8 @@ public class ServerChat extends UnicastRemoteObject implements IServerChat {
             salas.add(roomName);
             
             RoomChat room = new RoomChat();
-            Registry registry = LocateRegistry.getRegistry(2020);
             try {
-                registry.bind(roomName, room);
+                this.registry.bind(roomName, room);
             } catch (AccessException e) {
                 e.printStackTrace();
             } catch (RemoteException e) {
@@ -42,6 +42,7 @@ public class ServerChat extends UnicastRemoteObject implements IServerChat {
             } catch (AlreadyBoundException e) {
                 e.printStackTrace();
             }
+
             room.nome_sala = roomName;
             rooms.add(room);
 
@@ -56,8 +57,8 @@ public class ServerChat extends UnicastRemoteObject implements IServerChat {
         try {
             // Cria e exporta o registro RMI na porta 2020
             ServerChat server = new ServerChat();
-            Registry registry = LocateRegistry.createRegistry(2020);
-            registry.bind("Servidor", server);
+            server.registry = LocateRegistry.createRegistry(2020);
+            server.registry.bind("Servidor", server);
 
             server.createRoom("abacate");
             server.createRoom("sala");
